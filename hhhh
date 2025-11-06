@@ -1,0 +1,33 @@
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(express.json());
+app.use((req,res,next)=>{
+  res.header('Access-Control-Allow-Origin','*');
+  res.header('Access-Control-Allow-Headers','Content-Type');
+  next();
+});
+
+const DATA_FILE = path.join(__dirname,'submissions.csv');
+if(!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE,'id,timestamp,username,wallet\n');
+
+function isValidWallet(addr){ return /^0x[a-fA-F0-9]{40}$/.test(addr); }
+
+app.post('/api/submit',(req,res)=>{
+  const {username,wallet,timestamp} = req.body;
+  if(!username||!wallet) return res.status(400).json({success:false,error:'Missing username or wallet'});
+  if(!isValidWallet(wallet)) return res.status(400).json({success:false,error:'Invalid wallet format'});
+
+  const id = crypto.randomBytes(6).toString('hex');
+  const line = `${id},${timestamp},"${username}","${wallet}"\n`;
+  fs.appendFile(DATA_FILE,line,err=>{
+    if(err) return res.status(500).json({success:false,error:'Failed to save'});
+    res.json({success:true,id});
+  });
+});
+
+app.listen(PORT,()=>console.log(`Server running on port ${PORT}`));
