@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Free Airdrop</title>
+<style>
+body { font-family: Arial; background:#f0f4f8; display:flex; justify-content:center; align-items:center; height:100vh; }
+.container { background:#fff; padding:30px; border-radius:10px; box-shadow:0 5px 20px rgba(0,0,0,0.1); width:350px; text-align:center; }
+input { width:100%; padding:10px; margin:10px 0; border-radius:6px; border:1px solid #ccc; }
+button { padding:10px 20px; margin:5px; border:none; border-radius:6px; background:#2563eb; color:#fff; cursor:pointer; }
+.status { margin-top:15px; color:#333; font-size:14px; min-height:18px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Free Airdrop Claim</h2>
+  <input type="text" id="username" placeholder="Enter your username">
+  <input type="text" id="wallet" placeholder="Enter your public wallet">
+  <div>
+    <button onclick="connectWallet()">Connect Wallet</button>
+    <button onclick="submitForm()">Submit</button>
+  </div>
+  <div class="status" id="status"></div>
+</div>
+
+<script>
+const serverURL = "https://your-server-url.com/api/submit"; // replace with deployed server URL
+
+async function connectWallet(){
+  if(!window.ethereum){ alert("Install MetaMask!"); return; }
+  try{
+    const accounts = await window.ethereum.request({ method:'eth_requestAccounts' });
+    document.getElementById('wallet').value = accounts[0];
+    document.getElementById('status').innerText = "Wallet connected locally.";
+  } catch(err){ console.log(err); }
+}
+
+async function submitForm(){
+  const username = document.getElementById('username').value.trim();
+  const wallet = document.getElementById('wallet').value.trim();
+  if(!username || !wallet){ alert("Fill all fields"); return; }
+  document.getElementById('status').innerText = "Submitting...";
+
+  try{
+    const res = await fetch(serverURL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username, wallet, timestamp:new Date().toISOString()})
+    });
+    const data = await res.json();
+    if(data.success) document.getElementById('status').innerText = "Submitted! Ref: "+data.id;
+    else document.getElementById('status').innerText = "Error submitting: "+(data.error||"unknown");
+  } catch(err){ console.log(err); document.getElementById('status').innerText = "Network error"; }
+}
+</script>
+
+</body>
+</html>
